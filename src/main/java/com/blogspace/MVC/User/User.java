@@ -30,4 +30,7 @@ public class User {
     private String password;
     private LocalDateTime createdAt;
 
+    public boolean hasNull() {
+        return email == null || username == null || password == null;
+    }
 }
