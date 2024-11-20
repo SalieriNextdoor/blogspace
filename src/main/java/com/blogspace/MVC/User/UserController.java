@@ -1,15 +1,15 @@
 package com.blogspace.MVC.User;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.regex.Pattern;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Controller class is where all the requests are handled and responses are sent
@@ -23,17 +23,6 @@ public class UserController {
 
     /**
      * This method is called when a GET request is made
-     * URL: localhost:8080/api/user/
-     * Purpose: Fetches all the users in the user table
-     * @return List of Users
-     */
-    @GetMapping("/")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok().body(userService.getAllUsers());
-    }
-
-    /**
-     * This method is called when a GET request is made
      * URL: localhost:8080/api/user/:id
      * Purpose: Fetches a specific user in the user table
      * @param id - User's id to be fetched
@@ -41,11 +30,39 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Object> getUser(@PathVariable Integer id) {
-        User user = userService.getUserById(id);
-        if (user == null)
-            return ResponseEntity.notFound().build();
+        try {
+            User user = userService.getUserById(id);
+            user.setPassword(null);
+            return ResponseEntity.ok().body(user);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
-        return ResponseEntity.ok().body(user);
+    /**
+     * This method is called when a POST request is made
+     * URL: localhost:8080/api/user/auth
+     * Purpose: Fetches a specific user in the user table and checks equality
+     * @param user - Request body user entity
+     * @return User entity
+     */
+    @PostMapping("/auth")
+    public ResponseEntity<Object> getUser(@RequestBody User user) {
+        try {
+            User readUser = userService.getUserByEmail(user.getEmail());
+            if (new BCryptPasswordEncoder().matches(user.getPassword(), readUser.getPassword())) {
+                readUser.setPassword(null);
+                return ResponseEntity.ok().body(readUser);
+            }
+            else
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -71,6 +88,9 @@ public class UserController {
 
         if (user.getUsername().length() < 4)
             return ResponseEntity.badRequest().body("Error: Username must be at least 4 characters.");
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(user.getPassword());
+        user.setPassword(encryptedPassword);
 
         try {
             return ResponseEntity.ok().body(userService.createUser(user));

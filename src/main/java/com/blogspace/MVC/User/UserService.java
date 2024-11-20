@@ -1,6 +1,5 @@
 package com.blogspace.MVC.User;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,8 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.regex.Pattern;
+
 
 /**
  * Service layer is where all the business logic lies
@@ -20,16 +18,14 @@ import java.util.regex.Pattern;
 public class UserService {
     private final UserRepo userRepo;
 
-    public List<User> getAllUsers() {
-        return userRepo.findAll();
+    public User getUserById(int id) {
+        return userRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User with id " + id + " does not exist."));
     }
 
-    public User getUserById(int id) {
-        Optional<User> user = userRepo.findById(id);
-        if (user.isPresent())
-            return user.get();
-        log.error("User with id: {} does not exist.", id);
-        return null;
+    public User getUserByEmail(String email) {
+        return userRepo.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User with email " + email + " does not exist."));
     }
 
     public User createUser(User user) {
