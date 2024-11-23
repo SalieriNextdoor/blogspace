@@ -1,5 +1,6 @@
 package com.blogspace.MVC.User;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -30,4 +31,12 @@ public class User {
     private String password;
     private LocalDateTime createdAt;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    public String getPassword() {
+        return password;
+    }
+
+    public boolean hasNull() {
+        return email == null || username == null || password == null;
+    }
 }
