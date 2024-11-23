@@ -1,25 +1,65 @@
 package com.blogspace.MVC.User;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.crypto.SecretKey;
 
 /**
  * Controller class is where all the requests are handled and responses are sent
  */
 @RestController
 @RequestMapping("/api/user")
-@RequiredArgsConstructor
 @Validated
 public class UserController {
     private final UserService userService;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final SecretKey key;
+
+    public UserController(
+            UserService userService,
+            BCryptPasswordEncoder passwordEncoder, SecretKey jwtKey) {
+        this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
+        this.key = jwtKey;
+    }
+
+    /**
+     * This method is called when a GET request is made
+     * URL: localhost:8080/api/user/auth/
+     * Purpose: Loads current user according to token
+     * @return User entity
+     */
+    @GetMapping("/auth/")
+    public ResponseEntity<User> getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = authentication.getName();
+
+            User user = userService.getUserByEmail(userEmail);
+            user.setPassword(null);
+
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
 
     /**
      * This method is called when a GET request is made
@@ -43,36 +83,38 @@ public class UserController {
 
     /**
      * This method is called when a POST request is made
-     * URL: localhost:8080/api/user/auth
+     * URL: localhost:8080/api/user/
      * Purpose: Fetches a specific user in the user table and checks equality
      * @param user - Request body user entity
      * @return User entity
      */
-    @PostMapping("/auth")
+    @PostMapping("/")
     public ResponseEntity<Object> getUser(@RequestBody User user) {
         try {
             User readUser = userService.getUserByEmail(user.getEmail());
-            if (new BCryptPasswordEncoder().matches(user.getPassword(), readUser.getPassword())) {
-                readUser.setPassword(null);
-                return ResponseEntity.ok().body(readUser);
+            if (readUser != null && passwordEncoder.matches(user.getPassword(), readUser.getPassword())) {
+                String token = generateToken(user);
+
+                Map<String, String> response = new HashMap<>();
+                response.put("token", token);
+
+                return ResponseEntity.ok(response);
             }
             else
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     /**
      * This method is called when a POST request is made
-     * URL: localhost:8080/api/user/
+     * URL: localhost:8080/api/user/signup
      * Purpose: Create a User entity
      * @param user - Request body is a User entity
      * @return Created User entity
      */
-    @PostMapping("/")
+    @PostMapping("/signup")
     public ResponseEntity<Object> saveUser(@RequestBody User user) {
         if (user.hasNull())
             return ResponseEntity.badRequest().body("Error: Missing fields.");
@@ -89,11 +131,17 @@ public class UserController {
         if (user.getUsername().length() < 4)
             return ResponseEntity.badRequest().body("Error: Username must be at least 4 characters.");
 
-        String encryptedPassword = new BCryptPasswordEncoder().encode(user.getPassword());
+        String encryptedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encryptedPassword);
 
         try {
-            return ResponseEntity.ok().body(userService.createUser(user));
+            User created = userService.createUser(user);
+            String token = generateToken(created);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (RuntimeException e) {
@@ -124,5 +172,16 @@ public class UserController {
     }
     private boolean isValidUsername(String username) {
         return username.matches("^\\w+$");
+    }
+
+    private String generateToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("user", true)
+                .claim("id", user.getId())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 21600 * 1000)) // 6 hours
+                .signWith(key)
+                .compact();
     }
 }

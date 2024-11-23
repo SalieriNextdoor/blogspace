@@ -34,7 +34,7 @@ const AuthState: React.FC<AuthStateProps> = (props) => {
     if (localStorage.token) setAuthToken(localStorage.token);
 
     try {
-      const res = await axios.get("/api/user/load");
+      const res = await axios.get("/api/user/auth/");
       dispatch({ type: USER_LOADED, payload: res.data });
     } catch (err: any) {
       dispatch({ type: AUTH_ERROR, payload: err.data });
@@ -50,7 +50,7 @@ const AuthState: React.FC<AuthStateProps> = (props) => {
     };
 
     try {
-      const res = await axios.post('/api/user/auth', formData, config);
+      const res = await axios.post('/api/user/', formData, config);
       console.log(LOGIN_SUCCESS);
       dispatch({ type: LOGIN_SUCCESS, payload: res.data });
     } catch (err: any) {
@@ -68,7 +68,7 @@ const AuthState: React.FC<AuthStateProps> = (props) => {
     };
 
     try {
-      const res = await axios.post("/api/user/", formData, config);
+      const res = await axios.post("/api/user/signup", formData, config);
       dispatch({ type: SIGNUP_SUCCESS, payload: res.data });
     } catch (err: any) {
       dispatch({ type: SIGNUP_FAIL, payload: err.response?.data });

@@ -3,11 +3,15 @@ import AuthContext from '../context/auth/authContext';
 import Navbar from "../layout/Navbar";
 
 export default function Login() {
-  const {login, error} = useContext(AuthContext)!;
+  const {loadUser, loading, isAuthenticated, login, error} = useContext(AuthContext)!;
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() =>{
+        loadUser();
+    });
 
   const {email, password} = formData;
 
@@ -28,6 +32,7 @@ export default function Login() {
   return (
     <div className="Login">
       <Navbar />
+      {(!loading && isAuthenticated) ? (<h1>AUTHENTICATED</h1>) : (<h1>UNAUTH</h1>)}
       <form onSubmit={onSubmit}>
         <div className="w-10/12 sm:w-8/12 md:w-6/12 lg:w-4/12 xl:w-3/12 mx-auto mt-32 p-7 py-11 rounded-lg bg-gray-800 flex flex-col items-center gap-7 text-white">
           <h1 className="text-3xl font-semibold mb-14">Login</h1>
