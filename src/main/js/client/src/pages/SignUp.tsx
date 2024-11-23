@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/auth/authContext";
 import Navbar from "../layout/Navbar";
 
 export default function SignUp() {
-  const { signup, error } = useContext(AuthContext)!;
+  const { signup, loading, isAuthenticated, error } = useContext(AuthContext)!;
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -12,6 +13,12 @@ export default function SignUp() {
   });
 
   const { email, username, password, confirmPassword } = formData;
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) navigate("/", { replace: true });
+  }, [loading, isAuthenticated, navigate]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,11 +31,11 @@ export default function SignUp() {
       return;
     }
     await signup({ email, username, password });
+    navigate("/", { replace: true });
   };
 
   useEffect(() => {
-    if (error)
-      console.error('Sign up error: ', error);
+    if (error) console.error("Error: ", error);
   }, [error]);
 
   return (

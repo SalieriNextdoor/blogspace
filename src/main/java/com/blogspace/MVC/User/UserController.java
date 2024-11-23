@@ -1,11 +1,10 @@
 package com.blogspace.MVC.User;
 
+import com.blogspace.MVC.Project.Project;
+import com.blogspace.MVC.Project.ProjectDTO;
+import com.blogspace.util.exception.BadArgumentException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,7 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -47,7 +48,7 @@ public class UserController {
      * @return User entity
      */
     @GetMapping("/auth/")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<UserDTO> getCurrentUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userEmail = authentication.getName();
@@ -55,7 +56,7 @@ public class UserController {
             User user = userService.getUserByEmail(userEmail);
             user.setPassword(null);
 
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(convertToDTO(user));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -69,12 +70,12 @@ public class UserController {
      * @return User entity
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getUser(@PathVariable Integer id) {
+    public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
         try {
             User user = userService.getUserById(id);
             user.setPassword(null);
-            return ResponseEntity.ok().body(user);
-        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(convertToDTO(user));
+        } catch (BadArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -144,25 +145,30 @@ public class UserController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     /**
      * This method is called when a DELETE request is made
-     * URL: localhost:8080/api/user/:id
-     * Purpose: Delete a User entity
-     * @param id - User's id to be deleted
+     * URL: localhost:8080/api/user/auth/
+     * Purpose: Delete current user entity
      * @return a String message indicating successful deletion
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Integer id) {
+    @DeleteMapping("/auth/")
+    public ResponseEntity<String> deleteUser() {
         try {
-            userService.deleteUser(id);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = authentication.getName();
+
+            User user = userService.getUserByEmail(userEmail);
+            userService.deleteUser(user.getId());
             return ResponseEntity.ok().body("User deleted successfully.");
-        } catch (IllegalArgumentException e) {
+        } catch (BadArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 
@@ -183,5 +189,18 @@ public class UserController {
                 .setExpiration(new Date(System.currentTimeMillis() + 21600 * 1000)) // 6 hours
                 .signWith(key)
                 .compact();
+    }
+
+    private UserDTO convertToDTO(User user) {
+        List<ProjectDTO> projectDTOs = user.getProjects().stream()
+                .map(this::convertToDTO)
+                .toList();
+
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt(), projectDTOs);
+    }
+
+    private ProjectDTO convertToDTO(Project project) {
+        return new ProjectDTO(
+                project.getId(), project.getTitle(), project.getDescription(), project.getImage(), project.getCreatedAt(), null, null);
     }
 }

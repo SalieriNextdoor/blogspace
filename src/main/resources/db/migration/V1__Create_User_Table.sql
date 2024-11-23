@@ -4,9 +4,9 @@ ALTER SCHEMA userschema OWNER TO admin;
 
 CREATE TABLE userschema.users (
       id SERIAL PRIMARY KEY,
-      username character varying(100) UNIQUE,
-      email character varying(250) UNIQUE,
-      password character varying(100),
+      username character varying(100) UNIQUE NOT NULL,
+      email character varying(250) UNIQUE NOT NULL,
+      password character varying(100) NOT NULL,
       created_at timestamp without time zone
 );
 

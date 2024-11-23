@@ -1,6 +1,22 @@
+import { useEffect, useContext } from "react";
 import { NavLink } from "react-router-dom";
+import AuthContext from "../context/auth/authContext";
 
 export default function Navbar() {
+  const { logout, loadUser, loading, isAuthenticated, error } =
+    useContext(AuthContext)!;
+
+  useEffect(() => {
+    if (!isAuthenticated) loadUser();
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    if (error) console.error("Error: ", error);
+  }, [error]);
+
+  const onClickLogout = () => logout();
+
   const getLinkClass = (isActive: boolean) =>
     isActive ? "text-white font-semibold" : "text-gray-400";
 
@@ -37,18 +53,31 @@ export default function Navbar() {
           </div>
           <div className="h-full flex items-center hidden md:flex">
             <ul className="flex inline align-middle columns-2 gap-7 text-xl">
-              <NavLink
-                to="/login"
-                className={({ isActive }) => getLinkClass(isActive)}
-              >
-                <li className="hover:text-white">Login</li>
-              </NavLink>
-              <NavLink
-                to="/signup"
-                className={({ isActive }) => getLinkClass(isActive)}
-              >
-                <li className="hover:text-white">Sign Up</li>
-              </NavLink>
+              {!loading && isAuthenticated ? (
+                <>
+                  <button
+                    onClick={onClickLogout}
+                    className="text-gray-400"
+                  >
+                    <li className="hover:text-white">Logout</li>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <NavLink
+                    to="/login"
+                    className={({ isActive }) => getLinkClass(isActive)}
+                  >
+                    <li className="hover:text-white">Login</li>
+                  </NavLink>
+                  <NavLink
+                    to="/signup"
+                    className={({ isActive }) => getLinkClass(isActive)}
+                  >
+                    <li className="hover:text-white">Sign Up</li>
+                  </NavLink>
+                </>
+              )}
             </ul>
           </div>
         </div>
