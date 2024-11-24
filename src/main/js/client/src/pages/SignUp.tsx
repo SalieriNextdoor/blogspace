@@ -81,7 +81,7 @@ export default function SignUp() {
             required
           />
           <button
-            className="p-3 px-9 mt-8 bg-gray-600 hover:bg-gray-500 rounded-md"
+            className="p-3 px-9 mt-8 bg-gray-600 hover:bg-gray-500 transition rounded-md"
             type="submit"
           >
             Sign up

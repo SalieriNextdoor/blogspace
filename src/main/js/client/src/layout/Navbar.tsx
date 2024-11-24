@@ -21,7 +21,7 @@ export default function Navbar() {
     isActive ? "text-white font-semibold" : "text-gray-400";
 
   return (
-    <div className="Navbar">
+    <div className="Navbar sticky top-0">
       <nav className="bg-gray-800 h-20 w-screen">
         <div className="h-full flex w-9/12 justify-between mx-auto">
           <div className="h-full flex items-center">

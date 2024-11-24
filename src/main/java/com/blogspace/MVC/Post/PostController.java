@@ -34,7 +34,7 @@ public class PostController {
      * @return Post entity
      */
     @GetMapping("/{projectId}/posts/{id}")
-    public ResponseEntity<PostDTO> getPostById(@PathVariable Long id, @PathVariable String projectId) {
+    public ResponseEntity<PostDTO> getPostById(@PathVariable Long id, @SuppressWarnings("unused") @PathVariable String projectId) {
         try {
             Post post = postService.getPostById(id);
 
@@ -87,7 +87,7 @@ public class PostController {
      * @return Project entity
      */
     @PutMapping("/{projectId}/posts/{id}")
-    public ResponseEntity<PostDTO> modifyPost(@PathVariable Long id, @RequestBody Post post, @PathVariable String projectId) {
+    public ResponseEntity<PostDTO> modifyPost(@PathVariable Long id, @RequestBody Post post, @SuppressWarnings("unused") @PathVariable String projectId) {
         if (post.hasNull())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -116,13 +116,13 @@ public class PostController {
      * @return Project entity
      */
     @DeleteMapping("/{projectId}/posts/{id}")
-    public ResponseEntity<String> deletePost(@PathVariable Long id, @PathVariable String projectId) {
+    public ResponseEntity<String> deletePost(@PathVariable Long id, @SuppressWarnings("unused") @PathVariable String projectId) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userEmail = authentication.getName();
             User user = userService.getUserByEmail(userEmail);
 
-            postService.deletePost(id, user);;
+            postService.deletePost(id, user);
 
             return ResponseEntity.ok().body("Post deleted successfully.");
         } catch (UnauthorizedAccessException e) {

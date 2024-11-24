@@ -21,7 +21,12 @@ public class ProjectService {
     private final ProjectRepo projectRepo;
 
     public List<Project> getAllProjects() {
-        return projectRepo.findAll();
+        try {
+            return projectRepo.findAll();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw e;
+        }
     }
 
     public List<Post> getAllPostsFromProjectById(Long id) {
@@ -59,7 +64,7 @@ public class ProjectService {
             }
 
             Project originalProject = getProjectById(id);
-            if (!user.getId().equals(id)) {
+            if (!user.getId().equals(originalProject.getUser().getId())) {
                 log.error("User with id {} is not the creator of project with id {}.", user.getId(), id);
                 throw new UnauthorizedAccessException("User is not the creator of this project.");
             }
@@ -91,7 +96,7 @@ public class ProjectService {
         }
 
         Project originalProject = getProjectById(id);
-        if (!Objects.equals(user.getId(), originalProject.getUser().getId())) {
+        if (user.getId().equals(originalProject.getUser().getId())) {
             log.error("User with id {} is not the creator of project with id {}.", user.getId(), id);
             throw new UnauthorizedAccessException("User is not the creator of this project.");
         }

@@ -1,6 +1,6 @@
 import {
   AuthStateType,
-  AuthActionType,
+  ActionType,
   USER_LOADED,
   AUTH_ERROR,
   LOGIN_SUCCESS,
@@ -12,7 +12,7 @@ import {
 
 const authReducer = (
   state: AuthStateType,
-  action: AuthActionType,
+  action: ActionType,
 ): AuthStateType => {
   switch (action.type) {
     case USER_LOADED:

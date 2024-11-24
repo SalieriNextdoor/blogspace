@@ -5,8 +5,8 @@ import authReducer from "./authReducer";
 import setAuthToken from "../../util/setAuthToken";
 import {
   AuthStateType,
-  AuthActionType,
-  AuthStateProps,
+  ActionType,
+  StateProps,
   USER_LOADED,
   AUTH_ERROR,
   LOGIN_SUCCESS,
@@ -16,7 +16,7 @@ import {
   SIGNUP_FAIL,
 } from "../types";
 
-const AuthState: React.FC<AuthStateProps> = (props) => {
+const AuthState: React.FC<StateProps> = (props) => {
   const initialState: AuthStateType = {
     token: localStorage.getItem("token"),
     isAuthenticated: false,
@@ -26,7 +26,7 @@ const AuthState: React.FC<AuthStateProps> = (props) => {
   };
 
   const [state, dispatch] = useReducer<
-    React.Reducer<AuthStateType, AuthActionType>
+    React.Reducer<AuthStateType, ActionType>
   >(authReducer, initialState);
 
   // Load user
@@ -74,7 +74,7 @@ const AuthState: React.FC<AuthStateProps> = (props) => {
     }
   };
 
-  const logout = () => dispatch({ type: LOGOUT });
+  const logout = async () => dispatch({ type: LOGOUT });
 
   return (
     <AuthContext.Provider
